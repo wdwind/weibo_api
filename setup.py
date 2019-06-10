@@ -6,13 +6,6 @@ except ImportError:
 __author__ = 'wddd'
 __version__ = '0.1.0'
 
-packages = [
-    'weibo_cn_api',
-    'weibo_com_api',
-    'simple_captcha',
-    'util'
-]
-
 setup(
     name='weibo_api',
     version=__version__,
@@ -21,10 +14,11 @@ setup(
     url='',
     install_requires=['cookiejar', 'mxnet==1.3.1', 'numpy==1.14.6', 'peewee', 'pickledb',
                       'pillow', 'requests', 'requests_toolbelt', 'rsa'],
+    test_requires=['mock==3.0.5;python_version<"3.3"'],
     include_package_data=True,
     keywords='Weibo api',
     description='An api for posting weibo (text, image, and video).',
-    packages=packages,
+    packages=['weibo_api'],
     package_dir={'weibo_cn_api': 'weibo_cn_api', 'weibo_com_api': 'weibo_com_api'},
     package_data={'simple_captcha': ['*.params', '*.json', '*.pkl']},
     classifiers=[

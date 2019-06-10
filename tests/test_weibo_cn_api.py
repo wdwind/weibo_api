@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from weibo_cn_api.weibo_cn_api import WeiboCnApi
-from weibo_cn_api.weibo_cn_api_constants import *
+from weibo_api import WeiboCnApi
+from weibo_api.weibo_cn_api.weibo_cn_api_constants import *
 
 try:
     from unittest.mock import MagicMock, patch, mock_open
@@ -11,6 +11,8 @@ except ImportError:  # Python 2
 
 
 class WeiboCnApiTest(unittest.TestCase):
+
+    PATH = 'weibo_api.weibo_cn_api.weibo_cn_api'
 
     def setUp(self):
         self.config = {'login_user': 'username',
@@ -54,7 +56,7 @@ class WeiboCnApiTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             WeiboCnApi(**self.config)
 
-    @patch('weibo_cn_api.weibo_cn_api.MultipartEncoder')
+    @patch(PATH + '.MultipartEncoder')
     def test_upload_pic_multipart(self, mock_multipart_encoder):
         mock_img_bytes = MagicMock()
         mock_img_bytes.to_string.return_value = 'img_bytes'
@@ -73,14 +75,14 @@ class WeiboCnApiTest(unittest.TestCase):
         response = weibo.repost('repost_id', 'content')
         self.assertEqual(response, {"ok": 1, "data": {}})
 
-    @patch('weibo_cn_api.weibo_cn_api.MultipartEncoder')
+    @patch(PATH + '.MultipartEncoder')
     def test_post_status_pic_files(self, mock_multipart_encoder):
         mock_img_bytes = MagicMock()
         mock_img_bytes.to_string.return_value = 'img_bytes'
         mock_multipart_encoder.return_value = mock_img_bytes
 
         weibo = WeiboCnApi(**self.config)
-        with patch('weibo_cn_api.weibo_cn_api.open', mock_open(read_data=b'data')) as m:
+        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
             response = weibo.post_status_pic_files('a', ['b'])
 
         self.assertEqual(response, {"ok": 1, "data": {}})

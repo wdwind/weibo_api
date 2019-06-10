@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 
-from weibo_com_api.weibo_com_api import WeiboComApi
+from weibo_api import WeiboComApi
 
 
 def post():

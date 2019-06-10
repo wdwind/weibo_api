@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from weibo_com_api.weibo_com_api import WeiboComApi
-from weibo_com_api.weibo_com_api_constants import *
+from weibo_api import WeiboComApi
+from weibo_api.weibo_com_api.weibo_com_api_constants import *
 
 try:
     from unittest.mock import MagicMock, patch, mock_open
@@ -11,6 +11,8 @@ except ImportError:  # Python 2
 
 
 class WeiboComApiTest(unittest.TestCase):
+
+    PATH = 'weibo_api.weibo_com_api.weibo_com_api'
 
     def setUp(self):
         self.config = {'login_user': 'username',
@@ -71,28 +73,28 @@ class WeiboComApiTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             WeiboComApi(**self.config)
 
-    @patch('weibo_com_api.weibo_com_api.getsize')
+    @patch(PATH + '.getsize')
     def test_upload_video(self, mock_getsize):
         mock_getsize.return_value = 1
 
         weibo = WeiboComApi(**self.config)
-        with patch('weibo_com_api.weibo_com_api.open', mock_open(read_data=b'data')) as m:
+        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
             fid = weibo.upload_video('video.mp4')
             self.assertEqual(fid, '1')
 
     def test_get_media_id(self):
         weibo = WeiboComApi(**self.config)
-        with patch('weibo_com_api.weibo_com_api.open', mock_open(read_data=b'data')) as m:
+        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
             pid = weibo.get_media_id('pic.png', weibo.upload_pic)
             self.assertEqual(pid, 'pid')
 
-    @patch('weibo_com_api.weibo_com_api.WeiboComApi.get_media_id')
-    @patch('weibo_com_api.weibo_com_api.WeiboComApi.upload_video')
+    @patch(PATH + '.WeiboComApi.get_media_id')
+    @patch(PATH + '.WeiboComApi.upload_video')
     def test_post_weibo(self, mock_upload_video, mock_get_media_id):
         mock_upload_video.return_value = 'fid'
         mock_get_media_id.return_value = 'pid'
 
         weibo = WeiboComApi(**self.config)
-        with patch('weibo_com_api.weibo_com_api.open', mock_open(read_data=b'data')) as m:
+        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
             response = weibo.post_weibo('caption', 'video.mp4', 'pic.png')
             self.assertEqual(response, {"code": "100000", "msg": "", "data": {"html": "html"}})
