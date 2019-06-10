@@ -16,8 +16,7 @@ setup(
     keywords='Weibo api',
     description='An api for posting weibo (text, image, and video).',
     packages=find_packages(exclude=('tests',)),
-    package_dir={'weibo_api': 'weibo_api'},
-    package_data={'weibo_api': ['*.params', '*.json', '*.pkl']},
+    package_data={'': ['*.params', '*.json', '*.pkl']},
     classifiers=[
         'Development Status :: Beta',
         'Intended Audience :: Developers',
