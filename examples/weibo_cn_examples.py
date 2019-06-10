@@ -10,7 +10,7 @@ from weibo_api import WeiboCnApi
 def post():
     weibo = WeiboCnApi(login_user='user', login_password='password')
     response = weibo.post_status_pic_files("test post " + str(time.time()), ['./zyene.png'])
-    print(response)
+    print('Response status: %s. (1 means successful.)' % response.get('ok', 'Unknown error'))
 
 
 if __name__ == '__main__':

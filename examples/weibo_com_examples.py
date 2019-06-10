@@ -10,7 +10,7 @@ from weibo_api import WeiboComApi
 def post():
     weibo = WeiboComApi(login_user='user', login_password='password')
     response = weibo.post_weibo('test post' + str(time.time()), 'video.mp4', 'zyene.jpg')
-    print(response)
+    print('Response status: %s. (100000 means successful.)' % response.get('code', 'Unknown error'))
 
 
 if __name__ == '__main__':
