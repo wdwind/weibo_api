@@ -25,7 +25,7 @@ setup(
     description='An api for posting weibo (text, image, and video).',
     packages=packages,
     package_dir={'weibo_cn_api': 'weibo_cn_api', 'weibo_com_api': 'weibo_com_api'},
-    package_data='',
+    package_data={'simple_captcha': ['*.params', '*.json', '*.pkl']},
     classifiers=[
         'Development Status :: Beta',
         'Intended Audience :: Developers',
