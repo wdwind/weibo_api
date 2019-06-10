@@ -1,7 +1,4 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
 __author__ = 'wddd'
 __version__ = '0.1.0'
@@ -18,7 +15,7 @@ setup(
     include_package_data=True,
     keywords='Weibo api',
     description='An api for posting weibo (text, image, and video).',
-    packages=['weibo_api'],
+    packages=find_packages(),
     package_dir={'weibo_api': 'weibo_api'},
     package_data={'weibo_api': ['*.params', '*.json', '*.pkl']},
     classifiers=[
