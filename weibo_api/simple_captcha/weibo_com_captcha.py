@@ -21,8 +21,10 @@ class WeiboComCaptcha(object):
     def __init__(self, index_path='model/index.pkl',
                  model_symbol_path='model/0.9269662921348315.net.all-symbol.json',
                  model_params_path='model/0.9269662921348315.net.all-0001.params',
-                 data_path='data', save_captcha=False):
-        self.data_path = data_path
+                 data_path='./data', save_captcha=False):
+        self.data_path = os.path.join(data_path)
+        if not os.path.exists(self.data_path):
+            os.makedirs(self.data_path)
         self.save_captcha = save_captcha
         self.index2ch, self.ch2index = self.read_index(os.path.join(self.CURRENT_DIR, index_path))
         self.net = self.read_model(os.path.join(self.CURRENT_DIR, model_symbol_path),
@@ -43,18 +45,16 @@ class WeiboComCaptcha(object):
         return predicted_label
 
     def save_im(self, im, label):
-        im_path = os.path.join(self.CURRENT_DIR, self.data_path)
         im_name = label + '_' + str(int(time.time())) + '.png'
-        im.save(os.path.join(im_path, im_name))
+        im.save(os.path.join(self.data_path, im_name))
 
     def report_wrong_result(self, predicted_label):
         if self.save_captcha:
-            im_path = os.path.join(self.CURRENT_DIR, self.data_path)
-            files = os.listdir(im_path)
+            files = os.listdir(self.data_path)
             for file_name in files:
                 if predicted_label in file_name:
-                    old_file = os.path.join(im_path, file_name)
-                    new_file = os.path.join(im_path, 'wrong_' + file_name)
+                    old_file = os.path.join(self.data_path, file_name)
+                    new_file = os.path.join(self.data_path, 'wrong_' + file_name)
                     os.rename(old_file, new_file)
                     return
             logging.error('Image file not found!')
