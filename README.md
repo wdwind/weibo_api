@@ -43,4 +43,4 @@ MIT
 
 ## Disclaimer
 
-Use at your own risk.
+Weibo services are highly unstable. Use it at your own risk.
