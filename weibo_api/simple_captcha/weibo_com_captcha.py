@@ -23,9 +23,9 @@ class WeiboComCaptcha(object):
                  model_params_path='model/0.9269662921348315.net.all-0001.params',
                  data_path='./data', save_captcha=False):
         self.data_path = os.path.join(data_path)
-        if not os.path.exists(self.data_path):
-            os.makedirs(self.data_path)
         self.save_captcha = save_captcha
+        if save_captcha and not os.path.exists(self.data_path):
+            os.makedirs(self.data_path)
         self.index2ch, self.ch2index = self.read_index(os.path.join(self.CURRENT_DIR, index_path))
         self.net = self.read_model(os.path.join(self.CURRENT_DIR, model_symbol_path),
                                    os.path.join(self.CURRENT_DIR, model_params_path))

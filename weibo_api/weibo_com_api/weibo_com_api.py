@@ -6,22 +6,17 @@ import hashlib
 import http.cookiejar
 import json
 import logging
-import ntpath
 import os
 import random
 import re
 import time
-import traceback
 from collections import OrderedDict
 from os.path import getsize
 
-import pickledb
 import requests
 import rsa
-from requests import ConnectionError
 
 from ..simple_captcha.weibo_com_captcha import WeiboComCaptcha
-from ..util.decorator import retries
 from ..util.requests_wrapper import RequestsWrapper
 from .weibo_com_api_constants import *
 
@@ -29,6 +24,10 @@ try:
     from urllib.parse import parse_qs, urlparse
 except ImportError:  # Python 2
     from urlparse import parse_qs, urlparse
+
+
+class LoginException(Exception):
+    pass
 
 
 class WeiboComApi(RequestsWrapper):
@@ -47,13 +46,6 @@ class WeiboComApi(RequestsWrapper):
 
         self.logger = logging.getLogger(__name__)
 
-        # Pic cache pickledb
-        pic_cache = kwargs.get('pic_cache', None)
-        if pic_cache and os.path.isfile(pic_cache):
-            self.cache = pickledb.load(pic_cache, False)
-        else:
-            self.cache = None
-
         self.captcha_cracker = WeiboComCaptcha(save_captcha=kwargs.get('save_captcha', False))
 
         self.timeout = kwargs.get('timeout', 60)
@@ -67,7 +59,7 @@ class WeiboComApi(RequestsWrapper):
             self.session.cookies.load(ignore_expires=True)
         else:
             if not self.login_user or not self.login_password:
-                raise RuntimeError('Login required.')
+                raise LoginException('Login required.')
             self.login()
 
     def prelogin(self):
@@ -121,7 +113,7 @@ class WeiboComApi(RequestsWrapper):
             if rsp['retcode'] == '2070' and rsp['reason'] == u'输入的验证码不正确':
                 self.logger.error('Wrong captcha: %s. Reporting...', pin)
                 self.captcha_cracker.report_wrong_result(pin)
-            raise ConnectionError('Wrong retcode. Login failed.')
+            raise LoginException('Wrong retcode. Login failed.')
 
         self.get(SSO_LOGIN_URL, headers=WeiboComApi.login_headers, timeout=self.timeout)
         params = {
@@ -182,7 +174,7 @@ class WeiboComApi(RequestsWrapper):
         init_info = res.json()
         if 'error' in init_info:
             self.login()
-            raise ConnectionError('Error in video upload initialization. Response: %s', res.content)
+            raise LoginException('Error in video upload initialization. Response: %s', res.content)
         return init_info
 
     def upload_video(self, filename):
@@ -242,31 +234,9 @@ class WeiboComApi(RequestsWrapper):
             rsp = self.post(MULTIMEDIA_UPLOAD_PIC_URL, params=params, data=data, timeout=self.timeout)
             return parse_qs(urlparse(rsp.url).query)['pid'][0]
 
-    def get_media_id(self, file_path, upload_func):
-        file_name = ntpath.basename(file_path)
-
-        if self.cache and self.cache.get(file_name):
-            cached_id = self.cache.get(file_name)
-            self.logger.info('Cache hit for %s:%s', file_name, cached_id)
-            return cached_id
-        else:
-            media_id = upload_func(file_path)
-            if self.cache:
-                self.cache.set(str(file_name), media_id)
-                self.cache.dump()
-            return media_id
-
-    @retries(max_tries=5, delay=60,
-             hook=lambda tries_remaining, exception, delay:
-             logging.getLogger(__name__)
-             .error(u'Exception when posting to weibo.com. %s: %s. %d tries remaining. Sleeping for %s seconds.'
-                    % (exception, traceback.format_exc(), tries_remaining, delay)))
-    def post_weibo(self, caption, video_file, pic_file, tags=None):
+    def post_status(self, caption, video_id, pic_id, tags=None):
         if len(caption) <= 6:
             raise ValueError('Video caption must contain at least 6 characters. Caption: %s', caption)
-
-        fid = self.upload_video(video_file)
-        pid = self.get_media_id(pic_file, self.upload_pic)
 
         data = OrderedDict([
             ('location', 'v6_group_content_home'),
@@ -278,10 +248,10 @@ class WeiboComApi(RequestsWrapper):
             ('mid', ''),
             ('isReEdit', 'false'),
             ('pdetail', ''),
-            ('video_fid', fid),
+            ('video_fid', video_id),
             ('video_titles', caption),
             ('video_tags', '' if tags is None else "|".join(tags)),
-            ('video_covers', "http://wx3.sinaimg.cn/large/" + pid + ".jpg|640|360"),
+            ('video_covers', "http://wx3.sinaimg.cn/large/" + pic_id + ".jpg|640|360"),
             ('video_monitor', 1),
             ('album_ids', ''),
             ('rank', 0),
@@ -304,7 +274,7 @@ class WeiboComApi(RequestsWrapper):
             rsp_data = rsp.json()
         except:
             self.login()
-            raise ConnectionError('Error posting video %s. Login again. Response: %s', caption, rsp.content)
+            raise LoginException('Error posting video %s. Login again. Response: %s', caption, rsp.content)
 
         if rsp_data['code'] == '100000':
             self.logger.info('Weibo %s is posted', caption)

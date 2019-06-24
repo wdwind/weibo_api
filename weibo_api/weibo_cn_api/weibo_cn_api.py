@@ -8,16 +8,16 @@ import mimetypes
 import ntpath
 import os
 import time
-import traceback
 
-import pickledb
 import requests
-from requests import ConnectionError
 from requests_toolbelt import MultipartEncoder
 
-from ..util.decorator import retries
 from ..util.requests_wrapper import RequestsWrapper
 from .weibo_cn_api_constants import *
+
+
+class LoginException(Exception):
+    pass
 
 
 class WeiboCnApi(RequestsWrapper):
@@ -40,13 +40,6 @@ class WeiboCnApi(RequestsWrapper):
 
         self.logger = logging.getLogger(__name__)
 
-        # Pic cache pickledb
-        pic_cache = kwargs.get('pic_cache', None)
-        if pic_cache and os.path.isfile(pic_cache):
-            self.cache = pickledb.load(pic_cache, False)
-        else:
-            self.cache = None
-
         self.timeout = kwargs.get('timeout', 60)
         self.session = requests.Session()
         self.session.headers = WeiboCnApi.headers
@@ -57,7 +50,7 @@ class WeiboCnApi(RequestsWrapper):
             self.session.cookies.load(ignore_expires=True)
         else:
             if not self.login_user or not self.login_password:
-                raise RuntimeError('Login required.')
+                raise LoginException('Login required.')
             self.login()
 
     def login(self):
@@ -80,7 +73,7 @@ class WeiboCnApi(RequestsWrapper):
         response = self.post(M_WEIBO_CN_LOGIN_URL, headers=headers, data=form_data, timeout=self.timeout)
         response_data = json.loads(response.content)
         if response_data['retcode'] != 20000000:
-            raise RuntimeError('Login m.weibo.cn failed.')
+            raise LoginException('Login m.weibo.cn failed.')
         if self.cookie_file:
             self.session.cookies.save(filename=self.cookie_file, ignore_discard=True, ignore_expires=True)
         self.logger.info('m.weibo.cn Login succeeded.')
@@ -98,7 +91,7 @@ class WeiboCnApi(RequestsWrapper):
         rsp_data = rsp.json()
         if 'pic_id' not in rsp_data:
             self.login()
-            raise ConnectionError('Unknown error when uploading pic %s.', pic_name)
+            raise LoginException('Unknown error when uploading pic %s.', pic_name)
         pic_id = rsp_data['pic_id']
         self.logger.debug('Pic %s is uploaded.', rsp_data['pic_id'])
         return pic_id
@@ -113,7 +106,7 @@ class WeiboCnApi(RequestsWrapper):
             self.logger.info('Weibo %s is posted', content)
         else:
             self.login()
-            raise ConnectionError('Unknown error posting weibo %s. Response: %s', content, rsp_data)
+            raise LoginException('Unknown error posting weibo %s. Response: %s', content, rsp_data)
         return rsp_data
 
     def repost(self, repost_id, content):
@@ -124,36 +117,15 @@ class WeiboCnApi(RequestsWrapper):
             self.logger.info('Weibo %s:%s is reposted', repost_id, content)
         else:
             self.login()
-            raise ConnectionError('Error posting weibo %s:%s. Response: %s', repost_id, content, rsp_data)
+            raise LoginException('Error posting weibo %s:%s. Response: %s', repost_id, content, rsp_data)
         return rsp_data
-
-    @retries(max_tries=3, delay=60,
-             hook=lambda tries_remaining, exception, delay:
-             logging.getLogger(__name__)
-             .error(u'Exception when posting to weibo.cn. %s: %s. %d tries remaining. Sleeping for %s seconds.'
-                    % (exception, traceback.format_exc(), tries_remaining, delay)))
-    def post_status_pic_files(self, content, pic_files):
-        pics = []
-
-        for pic_file in pic_files:
-            pics.append(self.get_pic_id(pic_file))
-
-        return self.post_status(content, pics)
 
     def get_pic_id(self, pic_file):
         pic_name = ntpath.basename(pic_file)
 
-        if self.cache and self.cache.get(pic_name):
-            cached_id = self.cache.get(pic_name)
-            self.logger.info('Cache hit for %s. Value: %s', pic_name, cached_id)
-            return cached_id
-        else:
-            with open(pic_file, 'rb') as f:
-                pic_id = self.upload_pic_multipart(f, pic_name)
-                if self.cache:
-                    self.cache.set(str(pic_name), pic_id)
-                    self.cache.dump()
-                return pic_id
+        with open(pic_file, 'rb') as f:
+            pic_id = self.upload_pic_multipart(f, pic_name)
+            return pic_id
 
     @property
     def st(self):

@@ -2,6 +2,7 @@ import json
 import unittest
 
 from weibo_api import WeiboComApi
+from weibo_api.weibo_com_api.weibo_com_api import LoginException
 from weibo_api.weibo_com_api.weibo_com_api_constants import *
 
 try:
@@ -65,12 +66,12 @@ class WeiboComApiTest(unittest.TestCase):
 
     def test_login_no_username(self):
         self.config.pop('login_password')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LoginException):
             WeiboComApi(**self.config)
 
     def test_login_no_password(self):
         self.config.pop('login_user')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(LoginException):
             WeiboComApi(**self.config)
 
     @patch(PATH + '.getsize')
@@ -78,23 +79,17 @@ class WeiboComApiTest(unittest.TestCase):
         mock_getsize.return_value = 1
 
         weibo = WeiboComApi(**self.config)
-        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
+        with patch(self.PATH + '.open', mock_open(read_data=b'abc')) as m:
             fid = weibo.upload_video('video.mp4')
             self.assertEqual(fid, '1')
 
-    def test_get_media_id(self):
+    def test_upload_pic(self):
         weibo = WeiboComApi(**self.config)
-        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
-            pid = weibo.get_media_id('pic.png', weibo.upload_pic)
+        with patch(self.PATH + '.open', mock_open(read_data=b'edf')) as m:
+            pid = weibo.upload_pic('pic.png')
             self.assertEqual(pid, 'pid')
 
-    @patch(PATH + '.WeiboComApi.get_media_id')
-    @patch(PATH + '.WeiboComApi.upload_video')
-    def test_post_weibo(self, mock_upload_video, mock_get_media_id):
-        mock_upload_video.return_value = 'fid'
-        mock_get_media_id.return_value = 'pid'
-
+    def test_post_weibo(self):
         weibo = WeiboComApi(**self.config)
-        with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
-            response = weibo.post_weibo('caption', 'video.mp4', 'pic.png')
-            self.assertEqual(response, {"code": "100000", "msg": "", "data": {"html": "html"}})
+        response = weibo.post_status('caption', 'vid', 'pid')
+        self.assertEqual(response, {"code": "100000", "msg": "", "data": {"html": "html"}})
