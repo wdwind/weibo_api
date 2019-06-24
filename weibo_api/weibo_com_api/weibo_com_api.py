@@ -17,7 +17,7 @@ import requests
 import rsa
 
 from ..simple_captcha.weibo_com_captcha import WeiboComCaptcha
-from ..util.requests_wrapper import RequestsWrapper
+from ..requests_wrapper import RequestsWrapper
 from .weibo_com_api_constants import *
 
 try:

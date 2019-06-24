@@ -12,7 +12,7 @@ import time
 import requests
 from requests_toolbelt import MultipartEncoder
 
-from ..util.requests_wrapper import RequestsWrapper
+from ..requests_wrapper import RequestsWrapper
 from .weibo_cn_api_constants import *
 
 

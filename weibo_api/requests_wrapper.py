@@ -2,7 +2,6 @@
 
 import logging
 import requests
-import sys
 
 from requests_toolbelt.utils import dump
 
@@ -40,15 +39,3 @@ class RequestsWrapper(object):
         except:
             self.logger.debug(data)
         return rsp
-
-
-def test():
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    my_requests = RequestsWrapper()
-
-    my_requests.get(r'https://fangpenlin.com/images/2012-08-26-good-logging-practice-in-python/ezcomet_logging.png')
-    # my_requests.get('https://stackoverflow.com/questions/606191/convert-bytes-to-a-string')
-
-
-if __name__ == '__main__':
-    test()
