@@ -43,7 +43,7 @@ class WeiboCnApi(RequestsWrapper):
         self.timeout = kwargs.get('timeout', 60)
         self.session = requests.Session()
         self.session.headers = WeiboCnApi.headers
-        self.cookie_file = kwargs.get('cookie_file', None)
+        self.cookie_file = kwargs.get('weibo_cn_cookie_file', None)
         self.session.cookies = http.cookiejar.LWPCookieJar(self.cookie_file)
 
         if self.cookie_file and os.path.isfile(self.cookie_file):
