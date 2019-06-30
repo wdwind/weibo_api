@@ -44,9 +44,9 @@ class WeiboCnApi(RequestsWrapper):
         self.session = requests.Session()
         self.session.headers = WeiboCnApi.headers
         self.cookie_file = kwargs.get('cookie_file', None)
+        self.session.cookies = http.cookiejar.LWPCookieJar(self.cookie_file)
 
         if self.cookie_file and os.path.isfile(self.cookie_file):
-            self.session.cookies = http.cookiejar.LWPCookieJar(self.cookie_file)
             self.session.cookies.load(ignore_expires=True)
         else:
             if not self.login_user or not self.login_password:

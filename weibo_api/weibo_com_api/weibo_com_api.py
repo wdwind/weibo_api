@@ -51,11 +51,11 @@ class WeiboComApi(RequestsWrapper):
         self.timeout = kwargs.get('timeout', 60)
         self.session = requests.Session()
         self.cookie_file = kwargs.get('weibo_com_cookie_file', None)
+        self.session.cookies = http.cookiejar.LWPCookieJar(self.cookie_file)
         self.login_constants = {}
 
         if self.cookie_file and os.path.isfile(self.cookie_file):
             # Currently cookies not working...
-            self.session.cookies = http.cookiejar.LWPCookieJar(self.cookie_file)
             self.session.cookies.load(ignore_expires=True)
         else:
             if not self.login_user or not self.login_password:
