@@ -10,7 +10,13 @@ import os
 import time
 
 import requests
+from PIL import Image
 from requests_toolbelt import MultipartEncoder
+
+try:
+    from io import BytesIO
+except ImportError:
+    from StringIO import StringIO as BytesIO
 
 from ..requests_wrapper import RequestsWrapper
 from .weibo_cn_api_constants import *
@@ -128,9 +134,19 @@ class WeiboCnApi(RequestsWrapper):
     def get_pic_id(self, pic_file):
         pic_name = ntpath.basename(pic_file)
 
-        with open(pic_file, 'rb') as f:
-            pic_id = self.upload_pic_multipart(f, pic_name)
-            return pic_id
+        pic_size = os.stat(pic_file).st_size
+        if pic_size >= 5000000:  # m.weibo.cn pic upload limitation is 5MB
+            with Image.open(pic_file) as pic:
+                with BytesIO() as buffer:
+                    # save to BytesIO instead of file
+                    # https://stackoverflow.com/a/41818645/4214478
+                    pic.save(buffer, "JPEG", optimize=True)
+                    pic_id = self.upload_pic_multipart(buffer.getvalue(), pic_name)
+                    return pic_id
+        else:
+            with open(pic_file, 'rb') as f:
+                pic_id = self.upload_pic_multipart(f, pic_name)
+                return pic_id
 
     @property
     def st(self):
