@@ -25,14 +25,18 @@ class WeiboCnApi(RequestsWrapper):
 
     headers = {'Accept': 'application/json, text/plain, */*',
                'Accept-Encoding': 'gzip, deflate, br',
-               'Accept-Language': 'zh-CN,zh;q=0.8,zh-TW;q=0.6,en;q=0.4',
+               'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,zh-TW;q=0.6',
                'Connection': 'keep-alive',
                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 '
                              '(KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',
                'X-Requested-With': 'XMLHttpRequest',
                'Host': 'm.weibo.cn',
                'Origin': 'https://m.weibo.cn',
-               'Referer': 'https://m.weibo.cn/compose'}
+               'Referer': 'https://m.weibo.cn/compose',
+               'dnt': '1',
+               'mweibo-pwa': '1',
+               'x-requested-with': 'XMLHttpRequest',
+               }
 
     def __init__(self, **kwargs):
         self.login_user = kwargs.get('login_user', None)
@@ -86,7 +90,8 @@ class WeiboCnApi(RequestsWrapper):
                                     ('pic', ('pic', pic, self.guess_content_type(pic_name)))],
                                    boundary)
         headers = copy.deepcopy(self.headers)
-        headers.update({'Content-Type': 'multipart/form-data; boundary={}'.format(boundary)})
+        headers.update({'Content-Type': 'multipart/form-data; boundary={}'.format(boundary),
+                        'x-xsrf-token': self.st})
         rsp = self.post(UPLOAD_PIC_URL, headers=headers, data=encoder.to_string(), timeout=self.timeout)
         rsp_data = rsp.json()
         if 'pic_id' not in rsp_data:
