@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 
 from weibo_api import WeiboCnApi
@@ -6,9 +7,9 @@ from weibo_api.weibo_cn_api.weibo_cn_api import LoginException
 from weibo_api.weibo_cn_api.weibo_cn_api_constants import *
 
 try:
-    from unittest.mock import MagicMock, patch, mock_open
+    from unittest.mock import MagicMock, PropertyMock, patch, mock_open
 except ImportError:  # Python 2
-    from mock import MagicMock, patch, mock_open
+    from mock import MagicMock, PropertyMock, patch, mock_open
 
 
 class WeiboCnApiTest(unittest.TestCase):
@@ -66,11 +67,16 @@ class WeiboCnApiTest(unittest.TestCase):
         weibo = WeiboCnApi(**self.config)
         self.assertEqual(weibo.upload_pic_multipart('pic', 'pic_name'), 'pic_id')
 
+    @patch('os.stat')
     @patch(PATH + '.MultipartEncoder')
-    def test_get_pic_id(self, mock_multipart_encoder):
+    def test_get_pic_id(self, mock_multipart_encoder, mock_stat):
         mock_img_bytes = MagicMock()
         mock_img_bytes.to_string.return_value = 'img_bytes'
         mock_multipart_encoder.return_value = mock_img_bytes
+
+        mock_file_size = MagicMock()
+        type(mock_file_size).st_size = PropertyMock(return_value=1)
+        mock_stat.return_value = mock_file_size
 
         weibo = WeiboCnApi(**self.config)
         with patch(self.PATH + '.open', mock_open(read_data=b'data')) as m:
