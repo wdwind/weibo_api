@@ -93,3 +93,7 @@ class WeiboComApiTest(unittest.TestCase):
         weibo = WeiboComApi(**self.config)
         response = weibo.post_status('caption', 'vid', 'pid')
         self.assertEqual(response, {"code": "100000", "msg": "", "data": {"html": "html"}})
+
+
+if __name__ == '__main__':
+    unittest.main()

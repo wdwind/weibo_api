@@ -1,5 +1,4 @@
 import json
-import os
 import unittest
 
 from weibo_api import WeiboCnApi
@@ -32,30 +31,41 @@ class WeiboCnApiTest(unittest.TestCase):
         response = MagicMock()
         if arg == M_WEIBO_CN_LOGIN_URL:
             response.content = '{"retcode":20000000,"msg":"","data":{"crossdomainlist":{"weibo.com":"..","sina.com.cn":"..","weibo.cn":".."},"loginresulturl":"","uid":".."}}'
-            return response
         elif arg == ST_URL:
             response.content = '{"preferQuickapp":0,"data":{"login":true,"st":"a32bc4","uid":"5711920318"},"ok":1}'
-            return response
         elif arg == UPLOAD_PIC_URL:
             response.content = '{"pic_id":"pic_id","thumbnail_pic":"thumbnail_pic","bmiddle_pic":"bmiddle_pic","original_pic":"original_pic"}'
-            response.json.return_value = json.loads(response.content)
-            return response
         elif arg == POST_STATUS_URL or arg == REPOST_URL:
             response.content = '{"ok":1,"data":{}}'
-            response.json.return_value = json.loads(response.content)
-            return response
+
+        response.json.return_value = json.loads(response.content)
+        return response
 
     def test_login(self):
         WeiboCnApi(**self.config)
 
     def test_login_no_username(self):
+        def st(arg, **kwargs):
+            response = MagicMock()
+            response.content = '{"preferQuickapp":0,"data":{"login":false,"st":"a32bc4","uid":"5711920318"},"ok":1}'
+            response.json.return_value = json.loads(response.content)
+            return response
+        request_mock = MagicMock(side_effect=st)
+        WeiboCnApi.get = request_mock
         self.config.pop('login_password')
-        with self.assertRaises(LoginException):
+        with self.assertRaises(RuntimeError):
             WeiboCnApi(**self.config)
 
     def test_login_no_password(self):
+        def st(arg, **kwargs):
+            response = MagicMock()
+            response.content = '{"preferQuickapp":0,"data":{"login":false,"st":"a32bc4","uid":"5711920318"},"ok":1}'
+            response.json.return_value = json.loads(response.content)
+            return response
+        request_mock = MagicMock(side_effect=st)
+        WeiboCnApi.get = request_mock
         self.config.pop('login_user')
-        with self.assertRaises(LoginException):
+        with self.assertRaises(RuntimeError):
             WeiboCnApi(**self.config)
 
     @patch(PATH + '.MultipartEncoder')
@@ -93,3 +103,7 @@ class WeiboCnApiTest(unittest.TestCase):
         weibo = WeiboCnApi(**self.config)
         response = weibo.repost('repost_id', 'content')
         self.assertEqual(response, {"ok": 1, "data": {}})
+
+
+if __name__ == '__main__':
+    unittest.main()

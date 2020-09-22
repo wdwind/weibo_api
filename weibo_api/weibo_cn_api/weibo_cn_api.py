@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import copy
-import http.cookiejar
 import json
 import logging
 import mimetypes
 import ntpath
 import os
+import pickle
 import time
 
 import requests
@@ -29,20 +29,13 @@ class LoginException(Exception):
 class WeiboCnApi(RequestsWrapper):
     """m.weibo.cn API"""
 
-    headers = {'Accept': 'application/json, text/plain, */*',
-               'Accept-Encoding': 'gzip, deflate, br',
-               'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,zh-TW;q=0.6',
-               'Connection': 'keep-alive',
-               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 '
-                             '(KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',
-               'X-Requested-With': 'XMLHttpRequest',
-               'Host': 'm.weibo.cn',
-               'Origin': 'https://m.weibo.cn',
-               'Referer': 'https://m.weibo.cn/compose',
-               'dnt': '1',
-               'mweibo-pwa': '1',
-               'x-requested-with': 'XMLHttpRequest',
-               }
+    COMMON_HEADERS = {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,zh-TW;q=0.6',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 '
+                      '(KHTML, like Gecko) Version/4.0 Chrome/67.0.3396.87 Mobile Safari/537.36',
+    }
 
     def __init__(self, **kwargs):
         self.login_user = kwargs.get('login_user', None)
@@ -51,42 +44,71 @@ class WeiboCnApi(RequestsWrapper):
         self.logger = logging.getLogger(__name__)
 
         self.timeout = kwargs.get('timeout', 60)
-        self.session = requests.Session()
-        self.session.headers = WeiboCnApi.headers
-        self.cookie_file = kwargs.get('weibo_cn_cookie_file', None)
-        self.session.cookies = http.cookiejar.LWPCookieJar(self.cookie_file)
-
-        if self.cookie_file and os.path.isfile(self.cookie_file):
-            self.session.cookies.load(ignore_expires=True)
-        else:
+        self.session_file = kwargs.get('weibo_cn_session_file', None)
+        self.session = self.load_session()
+        if not self.is_login():
             if not self.login_user or not self.login_password:
-                raise LoginException('Login required.')
+                raise RuntimeError('Provide username and password to login.')
             self.login()
 
     def login(self):
-        """Login m.weibo.cn. token is not needed here."""
-        headers = copy.deepcopy(self.headers)
-        headers.update({'Content-Type': 'application/x-www-form-urlencoded',
-                        'Host': 'passport.weibo.cn',
-                        'Origin': 'https://passport.weibo.cn',
-                        'Referer': M_WEIBO_CN_REFERER_URL})
+        """Login to m.weibo.cn. token is not needed here."""
+        url1 = 'https://passport.sina.cn/sso/login'
+        headers1 = copy.deepcopy(WeiboCnApi.COMMON_HEADERS)
+        headers1.update({
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Origin': 'https://passport.sina.cn',
+            'Referer': 'https://passport.sina.cn/signin/signin',
+        })
         form_data = {
             'username': self.login_user,
             'password': self.login_password,
             'savestate': 1,
-            'r': 'http://m.weibo.cn/',
-            'ec': 0,
-            'pagerefer': M_WEIBO_CN_PAGE_REFERER_URL,
-            'entry': 'mweibo',
-            'mainpageflag': 1
+            'ec': 1,
+            'pagerefer': '',
+            'entry': 'wapsso',
+            'sinacnlogin': 1,
         }
-        response = self.post(M_WEIBO_CN_LOGIN_URL, headers=headers, data=form_data, timeout=self.timeout)
-        response_data = json.loads(response.content)
-        if response_data['retcode'] != 20000000:
-            raise LoginException('Login m.weibo.cn failed.')
-        if self.cookie_file:
-            self.session.cookies.save(filename=self.cookie_file, ignore_discard=True, ignore_expires=True)
+        r1 = self.post(url1, headers=headers1, data=form_data, timeout=self.timeout)
+        r1_data = json.loads(r1.content)
+        if r1_data['retcode'] == 20000000:
+            url2 = r1_data['data']['loginresulturl'] + '&savestate=1&url=https://sina.cn'
+            r2 = self.get(url2, headers=WeiboCnApi.COMMON_HEADERS, timeout=self.timeout)
+            url3 = 'https://sina.cn'
+            r3 = self.get(url3, headers=WeiboCnApi.COMMON_HEADERS, timeout=self.timeout)
+            url4 = 'https://m.weibo.cn/?vt=4&pos=108'
+            r4 = self.get(url4, headers=WeiboCnApi.COMMON_HEADERS, timeout=self.timeout)
+            url5 = 'https://m.weibo.cn/api/config'
+            r5 = self.get(url5, headers=WeiboCnApi.COMMON_HEADERS, timeout=self.timeout)
+            r5_data = json.loads(r5.content)
+            if not r5_data['data']['login']:
+                raise LoginException('Login to m.weibo.cn failed.')
+        else:
+            raise LoginException('Login to m.weibo.cn failed.')
+        self.save_session()
         self.logger.info('m.weibo.cn Login succeeded.')
+
+    def is_login(self):
+        try:
+            self.st
+            return True
+        except LoginException:
+            return False
+
+    def save_session(self):
+        if self.session_file:
+            with open(self.session_file, 'wb') as f:
+                pickle.dump(self.session, f)
+                self.logger.info(f'Dumped session file to {self.session_file}')
+
+    def load_session(self):
+        if self.session_file and os.path.isfile(self.session_file):
+            with open(self.session_file, 'rb') as f:
+                self.logger.info(f'Loading session from {self.session_file}')
+                return pickle.load(f)
+        else:
+            self.logger.info('Session file does not exist.')
+            return requests.Session()
 
     def upload_pic_multipart(self, pic, pic_name):
         boundary = hex(int(time.time() * 1000))
@@ -95,14 +117,17 @@ class WeiboCnApi(RequestsWrapper):
                                     # (file, (file_name, file_pointer, file_type))
                                     ('pic', ('pic', pic, self.guess_content_type(pic_name)))],
                                    boundary)
-        headers = copy.deepcopy(self.headers)
-        headers.update({'Content-Type': 'multipart/form-data; boundary={}'.format(boundary),
-                        'x-xsrf-token': self.st})
+        headers = copy.deepcopy(WeiboCnApi.COMMON_HEADERS)
+        headers.update({'Content-Type': f'multipart/form-data; boundary={boundary}',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'MWeibo-Pwa': '1',
+                        'Origin': 'https://m.weibo.cn',
+                        'Referer': 'https://m.weibo.cn/compose/',
+                        'X-XSRF-TOKEN': self.st})
         rsp = self.post(UPLOAD_PIC_URL, headers=headers, data=encoder.to_string(), timeout=self.timeout)
         rsp_data = rsp.json()
         if 'pic_id' not in rsp_data:
-            self.login()
-            raise LoginException('Unknown error when uploading pic %s.', pic_name)
+            raise RuntimeError('Unknown error when uploading pic %s.', pic_name)
         pic_id = rsp_data['pic_id']
         self.logger.debug('Pic %s is uploaded.', rsp_data['pic_id'])
         return pic_id
@@ -111,24 +136,36 @@ class WeiboCnApi(RequestsWrapper):
         data = {'content': content, 'st': self.st}
         if pic_ids and len(pic_ids) > 0:
             data['picId'] = ','.join(pic_ids)
-        rsp = self.post(POST_STATUS_URL, headers=self.headers, data=data, timeout=self.timeout)
+        headers = copy.deepcopy(WeiboCnApi.COMMON_HEADERS)
+        headers.update({'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'MWeibo-Pwa': '1',
+                        'Origin': 'https://m.weibo.cn',
+                        'Referer': 'https://m.weibo.cn/compose/',
+                        'X-XSRF-TOKEN': self.st})
+        rsp = self.post(POST_STATUS_URL, headers=headers, data=data, timeout=self.timeout)
         rsp_data = rsp.json()
         if rsp_data['ok'] == 1:
             self.logger.info('Weibo %s is posted', content)
         else:
-            self.login()
-            raise LoginException('Unknown error posting weibo %s. Response: %s', content, rsp_data)
+            raise RuntimeError('Unknown error posting weibo %s. Response: %s', content, rsp_data)
         return rsp_data
 
     def repost(self, repost_id, content):
         data = {'id': repost_id, 'mid': repost_id, 'content': content, 'st': self.st}
-        rsp = self.post(REPOST_URL, headers=self.headers, data=data, timeout=self.timeout)
+        headers = copy.deepcopy(WeiboCnApi.COMMON_HEADERS)
+        headers.update({'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'MWeibo-Pwa': '1',
+                        'Origin': 'https://m.weibo.cn',
+                        'Referer': 'https://m.weibo.cn/compose/',
+                        'X-XSRF-TOKEN': self.st})
+        rsp = self.post(REPOST_URL, headers=headers, data=data, timeout=self.timeout)
         rsp_data = rsp.json()
         if rsp_data['ok'] == 1:
             self.logger.info('Weibo %s:%s is reposted', repost_id, content)
         else:
-            self.login()
-            raise LoginException('Error posting weibo %s:%s. Response: %s', repost_id, content, rsp_data)
+            raise RuntimeError('Error posting weibo %s:%s. Response: %s', repost_id, content, rsp_data)
         return rsp_data
 
     def get_pic_id(self, pic_file):
@@ -150,10 +187,14 @@ class WeiboCnApi(RequestsWrapper):
 
     @property
     def st(self):
-        rsp = self.get(ST_URL, headers=self.headers, timeout=self.timeout).json()
+        rsp = self.get(ST_URL, headers=WeiboCnApi.COMMON_HEADERS, timeout=self.timeout).json()
         if not rsp['data']['login']:
-            self.login()
-            return self.st
+            try:
+                if self.session_file:
+                    os.remove(self.session_file)
+            except OSError:
+                pass
+            raise LoginException('Not logged in.')
         else:
             return rsp['data']['st']
 
