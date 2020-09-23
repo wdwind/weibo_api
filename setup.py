@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 __author__ = 'wddd'
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 setup(
     name='weibo_api',
