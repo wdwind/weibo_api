@@ -10,7 +10,7 @@ setup(
     license='MIT',
     url='https://github.com/wdwind/weibo_api/tree/master',
     install_requires=['cookiejar', 'mxnet>=1.3.1,<1.6.0', 'pillow', 'requests', 'requests_toolbelt', 'rsa'],
-    test_requires=['mock==3.0.5;python_version<"3.3"'],
+    test_requires=[],
     include_package_data=True,
     keywords='Weibo api',
     description='An api for posting weibo (text, image, and video).',
@@ -21,7 +21,6 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Topic :: Software Development :: Libraries :: Python Modules',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.7',
     ],
 )

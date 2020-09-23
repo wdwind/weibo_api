@@ -1,14 +1,10 @@
 import json
 import unittest
+from unittest.mock import MagicMock, patch, mock_open
 
 from weibo_api import WeiboComApi
 from weibo_api.weibo_com_api.weibo_com_api import LoginException
 from weibo_api.weibo_com_api.weibo_com_api_constants import *
-
-try:
-    from unittest.mock import MagicMock, patch, mock_open
-except ImportError:  # Python 2
-    from mock import MagicMock, patch, mock_open
 
 
 class WeiboComApiTest(unittest.TestCase):

@@ -2,7 +2,7 @@
 
 A Python wrapper for Weibo write API.
 
-![Python 2.7, 3.7](https://img.shields.io/badge/Python-2.7%2C%203.7-3776ab.svg?maxAge=2592000)
+![Python 3.7](https://img.shields.io/badge/Python-3.7-3776ab.svg?maxAge=2592000)
 
 ## Features
 

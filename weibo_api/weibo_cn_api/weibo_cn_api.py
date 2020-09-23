@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import contextlib
 import copy
 import json
 import logging
@@ -8,18 +9,14 @@ import ntpath
 import os
 import pickle
 import time
+from io import BytesIO
 
 import requests
 from PIL import Image
 from requests_toolbelt import MultipartEncoder
 
-try:
-    from io import BytesIO
-except ImportError:
-    from StringIO import StringIO as BytesIO
-
-from ..requests_wrapper import RequestsWrapper
 from .weibo_cn_api_constants import *
+from ..requests_wrapper import RequestsWrapper
 
 
 class LoginException(Exception):
@@ -189,11 +186,8 @@ class WeiboCnApi(RequestsWrapper):
     def st(self):
         rsp = self.get(ST_URL, headers=WeiboCnApi.COMMON_HEADERS, timeout=self.timeout).json()
         if not rsp['data']['login']:
-            try:
-                if self.session_file:
-                    os.remove(self.session_file)
-            except OSError:
-                pass
+            with contextlib.suppress(TypeError, FileNotFoundError):
+                os.remove(self.session_file)
             raise LoginException('Not logged in.')
         else:
             return rsp['data']['st']

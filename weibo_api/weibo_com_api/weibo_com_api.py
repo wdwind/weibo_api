@@ -12,18 +12,14 @@ import re
 import time
 from collections import OrderedDict
 from os.path import getsize
+from urllib.parse import parse_qs, urlparse
 
 import requests
 import rsa
 
-from ..simple_captcha.weibo_com_captcha import WeiboComCaptcha
-from ..requests_wrapper import RequestsWrapper
 from .weibo_com_api_constants import *
-
-try:
-    from urllib.parse import parse_qs, urlparse
-except ImportError:  # Python 2
-    from urlparse import parse_qs, urlparse
+from ..requests_wrapper import RequestsWrapper
+from ..simple_captcha.weibo_com_captcha import WeiboComCaptcha
 
 
 class LoginException(Exception):
@@ -33,12 +29,17 @@ class LoginException(Exception):
 class WeiboComApi(RequestsWrapper):
     """weibo.com API for video upload"""
 
-    login_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
+    login_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/57.0.2987.133 Safari/537.36'
+    }
     post_headers = {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Origin': 'http://weibo.com',
-            'Referer': 'http://weibo.com/?topnav=1&wvr=6&mod=logo',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'}
+        'X-Requested-With': 'XMLHttpRequest',
+        'Origin': 'http://weibo.com',
+        'Referer': 'http://weibo.com/?topnav=1&wvr=6&mod=logo',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/57.0.2987.133 Safari/537.36'
+    }
 
     def __init__(self, **kwargs):
         self.login_user = kwargs.get('login_user', None)
@@ -204,7 +205,7 @@ class WeiboComApi(RequestsWrapper):
             'ua': WeiboComApi.login_headers['User-Agent'],
             'v': WeiboComApi.__get_unique_key()
         }
-        rsp = self.post(MULTIMEDIA_UPLOAD_DATA_URL, params=params, data=chunk, timeout=10*self.timeout).json()
+        rsp = self.post(MULTIMEDIA_UPLOAD_DATA_URL, params=params, data=chunk, timeout=10 * self.timeout).json()
         try:
             return rsp['succ']
         except:
