@@ -16,11 +16,8 @@ from PIL import Image
 from requests_toolbelt import MultipartEncoder
 
 from .weibo_cn_api_constants import *
+from ..LoginException import LoginException
 from ..requests_wrapper import RequestsWrapper
-
-
-class LoginException(Exception):
-    pass
 
 
 class WeiboCnApi(RequestsWrapper):
