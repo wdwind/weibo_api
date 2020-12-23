@@ -18,7 +18,7 @@ import requests
 import rsa
 
 from .weibo_com_api_constants import *
-from ..LoginException import LoginException
+from ..Exceptions import LoginException
 from ..requests_wrapper import RequestsWrapper
 from ..simple_captcha.weibo_com_captcha import WeiboComCaptcha
 

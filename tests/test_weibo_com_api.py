@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import MagicMock, patch, mock_open
 
 from weibo_api import WeiboComApi
-from weibo_api.LoginException import LoginException
+from weibo_api.Exceptions import LoginException
 from weibo_api.weibo_com_api.weibo_com_api_constants import *
 
 
