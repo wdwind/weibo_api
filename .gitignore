@@ -13,7 +13,7 @@ docs/_templates
 *.iml
 .idea/
 
-# OS generated files #
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -73,7 +73,7 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff:
+# Django stuff
 *.log
 
 # Sphinx documentation
@@ -82,5 +82,8 @@ docs/_build/
 # PyBuilder
 target/
 
-#Ipython Notebook
-.ipynb_checkpoints
+# Ipython Notebook
+*.ipynb_checkpoints
+
+# Pickle file
+*.pkl

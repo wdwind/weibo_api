@@ -8,11 +8,11 @@ from weibo_api import WeiboComApi
 
 
 def post():
-    weibo = WeiboComApi(login_user='user', login_password='password')
+    weibo = WeiboComApi(weibo_session_file='./weibo_session.pkl')
     vid = weibo.upload_video('video.mp4')
-    pid = weibo.upload_pic('zyene.jpg')
+    pid = weibo.upload_pic('zyene.png')
     response = weibo.post_status('test post' + str(time.time()), vid, pid)
-    print('Response status: %s. (100000 means successful.)' % response.get('code', 'Unknown error'))
+    print(f'Response status: {response.get("code", "Unknown error")}. (100000 means successful.)')
 
 
 if __name__ == '__main__':
