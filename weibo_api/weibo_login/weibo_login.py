@@ -256,8 +256,8 @@ class WeiboLoginApi(RequestsWrapper):
         if self.verification_type == 'sms':
             mobile = json.loads(re.search(r'phoneList: JSON.parse\(\'([^\']+)\'\),', verification_page.text).group(1))
             send_code_params.update({
-                'number': mobile['number'],
-                'mask_mobile': mobile['maskMobile'],
+                'number': mobile[0]['number'],
+                'mask_mobile': mobile[0]['maskMobile'],
                 'msg_type': self.verification_type,
             })
         elif self.verification_type == 'private_msg':
