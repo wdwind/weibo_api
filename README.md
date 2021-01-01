@@ -6,11 +6,11 @@ A Python wrapper for Weibo write API.
 
 ## Note (202012)
 
-Weibo(.com/.cn) recently had an update on the login logic, and now it is much more restricted. Basically if a device is not trusted, by default a secondary verification is required during login. We have accommodated with this change, and now the api supports secondary verification via sms or private message now. 
+Weibo(.com/.cn) recently had an update, which added more restrictions to the login logic. Basically if a device is not trusted, by default a secondary verification is required for login. We have accommodated with this change, and now the api supports secondary verification via sms or private message. 
 
-Although secondary verification is supported, there are some non-negligible limitations. For example, the process cannot be fully automated (need human intervention), and there is a very small limit of sms verification can be used per day. 
+Although secondary verification is supported, there are some non-negligible limitations. For example, the process cannot be fully automated (need human intervention), and the sms verification can only be used a few times per day. 
 
-As a result, now it is highly recommended to save the request session to avoid login every time when using the api. Check [``examples/``](examples/) to know how to save/load the session to a file. 
+As a result, it is highly recommended to save the requests session to avoid re-login every time when using the api. Check [``examples/``](examples/) on how to save/load the session to a file. 
 
 ## Features
 
