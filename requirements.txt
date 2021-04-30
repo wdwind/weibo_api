@@ -3,4 +3,4 @@ mxnet==1.5.0
 pillow==7.1.0
 requests==2.22.0
 requests_toolbelt==0.8.0
-rsa==4.0
+rsa==4.7
