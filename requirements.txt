@@ -1,6 +1,6 @@
 cookiejar==0.0.2
 mxnet==1.5.0
-pillow==7.1.0
+pillow==8.1.1
 requests==2.22.0
 requests_toolbelt==0.8.0
 rsa==4.7
