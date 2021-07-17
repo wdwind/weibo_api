@@ -3,7 +3,6 @@
 import copy
 import logging
 import mimetypes
-import ntpath
 import os
 import pickle
 import time
@@ -44,12 +43,12 @@ class WeiboCnApi(RequestsWrapper):
                 self.logger.info(f'Loading session from {session_file}')
                 return pickle.load(f)
 
-    def __upload_pic_multipart(self, pic, pic_name):
+    def __upload_pic_multipart(self, pic, pic_file):
         boundary = hex(int(time.time() * 1000))
         encoder = MultipartEncoder([('type', 'json'), ('st', self.__st),
                                     # https://github.com/requests/toolbelt/blob/master/requests_toolbelt/multipart/encoder.py#L227
                                     # (file, (file_name, file_pointer, file_type))
-                                    ('pic', ('pic', pic, self.__guess_content_type(pic_name)))],
+                                    ('pic', ('pic', pic, self.__guess_content_type(pic_file)))],
                                    boundary)
         headers = copy.deepcopy(WeiboCnApi.__COMMON_HEADERS)
         headers.update({
@@ -63,7 +62,7 @@ class WeiboCnApi(RequestsWrapper):
         rsp = self.post(UPLOAD_PIC_URL, headers=headers, data=encoder.to_string(), timeout=self.timeout)
         rsp_data = rsp.json()
         if 'pic_id' not in rsp_data:
-            raise RuntimeError(f'Unknown error when uploading pic {pic_name}.')
+            raise RuntimeError(f'Unknown error when uploading pic {pic_file}')
         pic_id = rsp_data['pic_id']
         self.logger.debug(f'Pic {rsp_data["pic_id"]} is uploaded.')
         return pic_id
@@ -109,8 +108,6 @@ class WeiboCnApi(RequestsWrapper):
         return rsp_data
 
     def get_pic_id(self, pic_file):
-        pic_name = ntpath.basename(pic_file)
-
         pic_size = os.stat(pic_file).st_size
         if pic_size >= 5000000:  # m.weibo.cn pic upload limitation is 5MB
             with Image.open(pic_file) as pic:
@@ -118,11 +115,11 @@ class WeiboCnApi(RequestsWrapper):
                     # save to BytesIO instead of file
                     # https://stackoverflow.com/a/41818645/4214478
                     pic.save(buffer, 'JPEG', optimize=True)
-                    pic_id = self.__upload_pic_multipart(buffer.getvalue(), pic_name)
+                    pic_id = self.__upload_pic_multipart(buffer.getvalue(), pic_file)
                     return pic_id
         else:
             with open(pic_file, 'rb') as f:
-                pic_id = self.__upload_pic_multipart(f, pic_name)
+                pic_id = self.__upload_pic_multipart(f, pic_file)
                 return pic_id
 
     @property
