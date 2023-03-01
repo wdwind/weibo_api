@@ -9,7 +9,7 @@ setup(
     author=__author__,
     license='MIT',
     url='https://github.com/wdwind/weibo_api/tree/master',
-    install_requires=['cookiejar', 'mxnet>=1.3.1,<1.6.0', 'pillow', 'requests', 'requests_toolbelt', 'rsa'],
+    install_requires=['cookiejar', 'mxnet>=1.3.1,<1.10.0', 'pillow', 'requests', 'requests_toolbelt', 'rsa'],
     test_requires=[],
     include_package_data=True,
     keywords='Weibo api',
